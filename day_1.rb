@@ -1,10 +1,7 @@
 #!/usr/bin/env ruby
 
-def calibration_value(lines)
-  lines.map do |line|
-    digits = line.scan(/\d/)
-    (digits.first + digits.last).to_i
-  end.sum
+def sum_lines(filename, &block)
+  File.readlines(filename).map(&block).map { |digits| (digits.first + digits.last).to_i }.sum
 end
 
 DIGITS = {
@@ -20,16 +17,13 @@ DIGITS = {
 }
 DIGITS_RE = /(?=(#{DIGITS.keys.join('|')}|\d))/
 
-def alpha_calibration_value(lines)
-  lines.map do |line|
-    digits = line.scan(DIGITS_RE).flatten.map { |digit| DIGITS[digit] || digit }
-    (digits.first + digits.last).to_i
-  end.sum
+def alpha_digits(line)
+  line.scan(DIGITS_RE).flatten.map { |digit| DIGITS[digit] || digit }
 end
 
 puts 'PART 1:'
-puts calibration_value File.readlines('./input/1.test')
-puts calibration_value File.readlines('./input/1.txt')
+puts sum_lines('./input/1.test') { |line| line.scan(/\d/) }
+puts sum_lines('./input/1.txt') { |line| line.scan(/\d/) }
 puts 'PART 2:'
-puts alpha_calibration_value File.readlines('./input/1b.test')
-puts alpha_calibration_value File.readlines('./input/1.txt')
+puts sum_lines('./input/1b.test') { |line| alpha_digits(line) }
+puts sum_lines('./input/1.txt') { |line| alpha_digits(line) }
