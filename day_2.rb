@@ -44,19 +44,20 @@ class Hand
   attr_accessor :red, :green, :blue
 end
 
-def part_one(type = 'txt')
-  games = File.readlines("./input/2.#{type}").map { |line| Game.new(line) }
+TEST_GAMES = File.readlines("./input/2.test").map { |line| Game.new(line) }
+GAMES = File.readlines("./input/2.txt").map { |line| Game.new(line) }
+
+def part_one(games)
   games.select(&:in_bounds?).map(&:id).sum
 end
 
-def part_two(type = 'txt')
-  games = File.readlines("./input/2.#{type}").map { |line| Game.new(line) }
+def part_two(games)
   games.map(&:power).sum
 end
 
 puts 'PART 1:'
-puts part_one('test')
-puts part_one
+puts part_one TEST_GAMES
+puts part_one GAMES
 puts 'PART 2:'
-puts part_two('test')
-puts part_two
+puts part_two TEST_GAMES
+puts part_two GAMES
