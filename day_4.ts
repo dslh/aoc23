@@ -7,36 +7,47 @@ interface Scratchcard {
   id: number;
   winning: number[];
   held: number[];
+  matches: number;
 }
 
 const CARD_RE = /Card +(\d+): +((\d+ +)+)\|(( +\d+)+)/
 
+function cardMatches(winning: number[], held: number[]): number {
+  const lookup: boolean[] = [];
+  winning.forEach(i => lookup[i] = true);
+
+  return held.filter(i => lookup[i]).length;
+}
+
+function cardScore(matches: number): number {
+  return matches && 2 ** (matches - 1);
+}
+
 function parseCard(line: string): Scratchcard {
-  const [, id, winning, , held] = line.match(CARD_RE);
+  const match = line.match(CARD_RE);
 
   const parseInts = (ints: string) => ints.split(' ').filter(i => i.length).map(i => parseInt(i));
 
-  return {
-    id: parseInt(id),
-    winning: parseInts(winning),
-    held: parseInts(held)
-  }
+  const id = parseInt(match[1]);
+  const winning = parseInts(match[2]);
+  const held = parseInts(match[4]);
+  const matches = cardMatches(winning, held);
+
+  return { id, winning, held, matches };
 }
 
 const cards: Scratchcard[] = input.split('\n').map(parseCard);
 
-function cardScore({ winning, held }: Scratchcard): number {
-  const lookup: boolean[] = [];
-  winning.forEach(i => lookup[i] = true);
-
-  const matches: number = held.filter(i => lookup[i]).length;
-
-  if (matches) return 2 ** (matches - 1);
-
-  return 0;
+const cardCounts: number[] = [];
+for (let i = cards.length - 1; i >= 0; --i) {
+  const { id, matches } = cards[i];
+  cardCounts[i] = 1 + cardCounts.slice(id, id + matches)
+                                .reduce((a, n) => a + n, 0);
 }
 
 console.log('Part 1:');
 console.log(
-  cards.map(cardScore).reduce((acc, score) => acc + score)
+  cards.reduce((acc, { matches }) => acc + cardScore(matches), 0)
 );
+console.log('Part 2:');
+console.log(cardCounts.reduce((a, i) => a + i));
