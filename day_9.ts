@@ -1,5 +1,4 @@
 import { readInputLines } from './input/read';
-const lcm = require('compute-lcm');
 
 const sequences: number[][] = readInputLines(9).map(
   line => line.split(' ').map(n => parseInt(n))
@@ -12,16 +11,24 @@ function sequenceDiff(sequence: number[]): number[] {
   return diff;
 }
 
-function nextValue(sequence: number[]): number {
-  if (sequence.every(n => n === 0)) return 0;
+function *continueSequence(sequence: number[]): Generator<number> {
+  if (sequence.every(n => n === 0))
+    while (true) yield 0;
 
-  return sequence[sequence.length - 1] + nextValue(sequenceDiff(sequence));
+  const diffGenerator = continueSequence(sequenceDiff(sequence));
+  let value = sequence[sequence.length - 1];
+  while (true) {
+    value += diffGenerator.next().value;
+    yield value;
+  }
+}
+
+function nextValue(sequence: number[]): number {
+  return continueSequence(sequence).next().value;
 }
 
 function prevValue(sequence: number[]): number {
-  if (sequence.every(n => n === 0)) return 0;
-
-  return sequence[0] - prevValue(sequenceDiff(sequence));
+  return continueSequence([...sequence].reverse()).next().value;
 }
 
 console.log('Part 1:');
