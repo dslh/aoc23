@@ -1,49 +1,65 @@
 import { readInputChunks } from './input/read';
 
-interface Pattern {
-  rows: string[];
-  cols: string[];
+interface CharGenerator {
+  (i: number): Generator<string>;
+  size: number;
+}
+interface IterableGrid {
+  rows: CharGenerator;
+  cols: CharGenerator;
 }
 
-function toPattern(chunk: string[]): Pattern {
-  let cols: string[];
+function toGrid(chunk: string[]): IterableGrid {
+  const rows = function*(i: number): Generator<string> {
+    for (const c of chunk[i])
+      yield c;
+  }
+  rows.size = chunk.length;
 
-  return {
-    rows: chunk,
-    get cols() {
-      if (!cols) {
-        cols = [];
-        for (let i = 0; i < chunk[0].length; ++i)
-          cols.push(chunk.map(line => line[i]).join(''));
-      }
+  const cols = function*(i: number): Generator<string> {
+    for (const row of chunk)
+      yield row[i];
+  }
+  cols.size = chunk[0].length;
 
-      return cols;
-    }
-  };
+  return { rows, cols };
 }
 
-const patterns: Pattern[] = readInputChunks(13).map(toPattern);
+const grids: IterableGrid[] = readInputChunks(13).map(toGrid);
 
-function isAxisOfSymmetry(lines: string[], at: number): boolean {
-  for (let i = 0; (at + i < lines.length) && (at - i > 0); ++i)
-    if (lines[at + i] !== lines[at - i - 1])
+function countSmudges(a: Generator<string>, b: Generator<string>, limit: number = 0) {
+  let count = 0;
+  let charA: string;
+  while (charA = a.next().value) {
+    const { value: charB } = b.next();
+    if (charA !== charB && ++count > limit)
+      break;
+  }
+  return count;
+}
+
+function checkSymmetry(lines: CharGenerator, at: number, expectedSmudges: number = 0): boolean {
+  let smudges = 0;
+  for (let i = 0; (at + i < lines.size) && (at - i > 0); ++i) {
+    smudges += countSmudges(lines(at + i), lines(at - i - 1), expectedSmudges);
+    if (smudges > expectedSmudges)
       return false;
-
-  return true;
+  }
+  return smudges === expectedSmudges;
 }
 
-function findSymmetry(lines: string[]): number | undefined {
-  for (let i = 1; i < lines.length; ++i)
-    if (isAxisOfSymmetry(lines, i))
+function findAxisOfSymmetry(lines: CharGenerator, expectedSmudges: number): number | undefined {
+  for (let i = 1; i < lines.size; ++i)
+    if (checkSymmetry(lines, i, expectedSmudges))
       return i;
 }
 
-function symmetryValue(pattern: Pattern): number {
-  const horizontalSymmetry = findSymmetry(pattern.rows);
+function summarizeSymmetry(grid: IterableGrid, expectedSmudges: number): number {
+  const horizontalSymmetry = findAxisOfSymmetry(grid.rows, expectedSmudges);
   if (horizontalSymmetry !== undefined)
     return horizontalSymmetry * 100;
 
-  const verticalSymmetry = findSymmetry(pattern.cols);
+  const verticalSymmetry = findAxisOfSymmetry(grid.cols, expectedSmudges);
   if (verticalSymmetry !== undefined)
     return verticalSymmetry;
 
@@ -51,44 +67,7 @@ function symmetryValue(pattern: Pattern): number {
 }
 
 console.log('Part 1:');
-console.log(patterns.map(symmetryValue).reduce((acc, n) => acc + n));
-
-function countDiffs(a: string, b: string): number {
-  let count = 0;
-  for (let i = 0; i < a.length; ++i)
-    if (a[i] !== b[i])
-      ++count;
-  return count;
-}
-
-function isSmudgedAxisOfSymmetry(lines: string[], at: number): boolean {
-  let smudges = 0;
-  for (let i = 0; (at + i < lines.length) && (at - i > 0); ++i) {
-    smudges += countDiffs(lines[at + i], lines[at - i - 1]);
-    if (smudges > 1)
-      return false;
-  }
-
-  return smudges === 1;
-}
-
-function findSmudgedSymmetry(lines: string[]): number | undefined {
-  for (let i = 1; i < lines.length; ++i)
-    if (isSmudgedAxisOfSymmetry(lines, i))
-      return i;
-}
-
-function smudgedSymmetryValue(pattern: Pattern): number {
-  const horizontalSymmetry = findSmudgedSymmetry(pattern.rows);
-  if (horizontalSymmetry !== undefined)
-    return horizontalSymmetry * 100;
-
-  const verticalSymmetry = findSmudgedSymmetry(pattern.cols);
-  if (verticalSymmetry !== undefined)
-    return verticalSymmetry;
-
-  throw 'Symmetry not found';
-}
+console.log(grids.map(grid => summarizeSymmetry(grid, 0)).reduce((acc, n) => acc + n));
 
 console.log('Part 2:');
-console.log(patterns.map(smudgedSymmetryValue).reduce((acc, n) => acc + n));
+console.log(grids.map(grid => summarizeSymmetry(grid, 1)).reduce((acc, n) => acc + n));
