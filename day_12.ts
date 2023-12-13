@@ -17,7 +17,12 @@ function parseRecord(line: string): Record {
 
 const records = input.map(parseRecord);
 
-function countPermutations(row: string, groups: number[], remainder: number): number {
+let permutationCache: { [key: string]: number };
+const countPermutations = (row: string, groups: number[], remainder: number): number => {
+  const cacheKey = `${row}${remainder}`;
+  const cached = permutationCache[cacheKey];
+  if (cached) return cached;
+
   if (groups.length === 0)
     return (row.indexOf('#') === -1) ? 1 : 0;
 
@@ -32,11 +37,13 @@ function countPermutations(row: string, groups: number[], remainder: number): nu
   }
 
   groups.push(group);
+  permutationCache[cacheKey] = count;
   return count;
 }
 
-function countAllPermutations({ row, groups }: Record): number {
+const countAllPermutations = ({ row, groups }: Record): number => {
   const requiredLength = groups.reduce((acc, n) => acc + n) + groups.length - 1;
+  permutationCache = {};
   return countPermutations(row, [...groups].reverse(), requiredLength);
 }
 
