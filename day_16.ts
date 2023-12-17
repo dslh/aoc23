@@ -41,18 +41,23 @@ const APPARATI: { [pictogram: string]: Apparatus } = {
 }
 
 class Contraption {
-  photons: Photon[] = [{ x: -1, y: 0, dX: 1, dY: 0 }];
+  photons: Photon[];
   grid: Apparatus[][];
   width: number;
   height: number;
   visits: number[][];
-  seen: { [photonStr: string]: boolean } = {};
+  seen: { [photonStr: string]: boolean };
 
   constructor(input: string[]) {
     this.grid = input.map(line => line.split('').map(c => APPARATI[c]));
-
     this.width = input[0].length;
     this.height = input.length;
+    this.init({ x: -1, y: 0, dX: 1, dY: 0 });
+  }
+
+  init(photon: Photon) {
+    this.photons = [photon];
+    this.seen = {};
     this.visits = Array(this.height).fill(null).map(() => Array(this.width).fill(0));
   }
 
@@ -85,3 +90,22 @@ console.log('Part 1:');
 const contraption = new Contraption(readInputLines(16));
 contraption.run();
 console.log(contraption.visited());
+
+console.log('Part 2:');
+let max = 0;
+const run = (photon: Photon) => {
+  contraption.init(photon);
+  contraption.run();
+  const visited = contraption.visited();
+  if (visited > max)
+    max = visited;
+}
+for (let row = 0; row < contraption.height; ++row) {
+  run({ x: -1, y: row, dX: 1, dY: 0 });
+  run({ x: contraption.width, y: row, dX: -1, dY: 0 });
+}
+for (let col = 0; col < contraption.width; ++col) {
+  run({ x: col, y: -1, dX: 0, dY: 1 });
+  run({ x: col, y: contraption.height, dX: 0, dY: -1 });
+}
+console.log(max);
