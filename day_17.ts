@@ -1,15 +1,8 @@
 import { readInputLines } from './input/read';
+import { Position, Dir, move, REVERSE_DIR, posEq } from './lib/pos';
 import PriorityQueue from 'ts-priority-queue';
 
 const input: string[] = readInputLines(17);
-
-interface Position {
-  x: number;
-  y: number;
-}
-function posEq(a: Position, b: Position): boolean {
-  return a.x === b.x && a.y === b.y;
-}
 
 interface GridConstructor<T> {
   data?: T[][];
@@ -43,21 +36,6 @@ class Grid<T> {
   }
 }
 
-type Dir = 'L' | 'R' | 'U' | 'D';
-const REVERSE_DIR = {
-  'L': 'R',
-  'R': 'L',
-  'U': 'D',
-  'D': 'U'
-};
-function moveDir(dir: Dir, { x, y }: Position): Position {
-  switch (dir) {
-    case 'L': return { x: x - 1, y };
-    case 'R': return { x: x + 1, y };
-    case 'U': return { x, y: y - 1 };
-    case 'D': return { x, y: y + 1 };
-  }
-}
 interface Momentum {
   dir: Dir;
   count: number;
@@ -102,7 +80,7 @@ class City {
   }
 
   neighbour(dir: Dir, prev: Visit): Visit | undefined {
-    const pos = moveDir(dir, prev.pos);
+    const pos = move(prev.pos, dir);
     if (dir === REVERSE_DIR[prev.momentum.dir]) return;
     if (!this.inBounds(pos)) return;
 
