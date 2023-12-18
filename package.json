@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "compute-lcm": "^1.1.2",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "ts-priority-queue": "^0.1.1"
   }
 }
