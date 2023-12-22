@@ -31,15 +31,6 @@ function BaseIterator(start: Position, end: Position, axis: Axis): PositionItera
   return PositionIterator(start, end, axis);
 }
 
-function TopIterator(start: Position, end: Position, axis: Axis): PositionIterator {
-  if (axis === 'z')
-    return (callback: (pos: Position) => any) => {
-      callback(end);
-    }
-
-  return PositionIterator(start, end, axis);
-}
-
 interface Brick {
   id: string;
   a: Position;
@@ -52,7 +43,6 @@ interface Brick {
 
   each: PositionIterator;
   eachBase: PositionIterator;
-  eachTop: PositionIterator;
 }
 let brickSerialNumber = 0;
 const Brick = (line: string): Brick => {
@@ -76,7 +66,6 @@ const Brick = (line: string): Brick => {
 
     each: PositionIterator(a, b, axis),
     eachBase: BaseIterator(a, b, axis),
-    eachTop: TopIterator(a, b, axis),
   };
 }
 
