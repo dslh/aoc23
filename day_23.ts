@@ -1,5 +1,14 @@
 import { readInputLines } from './input/read';
 import { Position, adjacent, posAdd, posEq } from './lib/pos';
+import { Graph, Edge, Path, longestPath, bidirectional } from './lib/graph';
+
+type Slope = '>' | '<' | '^' | 'v';
+const DOWNWARD: {[slope: string]: Position} = {
+  '>': { x:  1, y:  0 },
+  '<': { x: -1, y:  0 },
+  'v': { x:  0, y:  1 },
+  '^': { x:  0, y: -1 }
+};
 
 class Grid {
   lines: string[];
@@ -38,105 +47,69 @@ class Grid {
   next(pos: Position, prev: Position): Position {
     return this.adjacent(pos).filter(adj => !posEq(adj, prev))[0];
   }
-}
 
-type Slope = '>' | '<' | '^' | 'v';
-const DOWNWARD: {[slope: string]: Position} = {
-  '>': { x:  1, y:  0 },
-  '<': { x: -1, y:  0 },
-  'v': { x:  0, y:  1 },
-  '^': { x:  0, y: -1 }
-};
+  toGraph(): Graph {
+    const graph: Graph = {};
+    const vertCoords = {};
 
-interface Edge {
-  path: Position[];
-  end: Vertex;
-}
-interface Vertex {
-  pos: Position;
-  edges: Edge[];
-}
+    const posStr = ({ x, y }: Position) => `${x},${y}`;
+    const addVert = (name, pos) => {
+      graph[name] = [];
+      vertCoords[posStr(pos)] = name;
+    };
+    const getVert = (pos) => vertCoords[posStr(pos)];
 
-class Graph {
-  grid: Grid;
-  vertices: Vertex[] = [];
-  start: Vertex;
-  end: Vertex;
+    addVert('start', this.start);
+    addVert('end', this.end);
 
-  constructor(grid: Grid) {
-    this.grid = grid;
-    this.start = { pos: grid.start, edges: [] };
-    this.end = { pos: grid.end, edges: [] };
-
-    this.vertices.push(this.start);
-    this.vertices.push(this.end);
-
-    const innerVerts: Vertex[] = [];
+    let id = 0;
+    const innerVerts: Position[] = [];
     for (let y = 1; y + 1 < grid.height; ++y) {
       for (let x = 1; x + 1 < grid.width; ++x) {
         const pos = { x, y };
-        if (grid.isVertex(pos)) {
-          const vertex = { pos, edges: [] };
-          this.vertices.push(vertex);
-          innerVerts.push(vertex);
-        }
+        if (!this.isVertex(pos)) continue;
+
+        addVert((++id).toString(), pos);
+        innerVerts.push(pos);
       }
     }
 
-    this.followEdge(this.start, { x: grid.start.x, y: 1 });
+    const followEdge = (name: string, from: Position, start: Position) => {
+      let length = 1;
+      let prev = from;
+      let pos = start;
+      while (!getVert(pos)) {
+        const next = this.next(pos, prev);
+        length++;
+        prev = pos;
+        pos = next;
+      }
 
-    for (const vertex of innerVerts)
-      this.followEdges(vertex);
-  }
+      graph[name].push({ weight: length, dest: getVert(pos) });
+    };
 
-  followEdge(vertex: Vertex, start: Position) {
-    const path: Position[] = [start];
+    followEdge('start', this.start, { x: this.start.x, y: 1 });
 
-    let prev = vertex.pos;
-    let pos = start;
-    while (!this.grid.isVertex(pos)) {
-      const next = this.grid.next(pos, prev);
-      path.push(next);
-      prev = pos;
-      pos = next;
+    for (const vert of innerVerts) {
+      const name = getVert(vert);
+      for (const pos of this.adjacent(vert)) {
+        const tile = this.at(pos);
+        if (posEq(vert, posAdd(pos, DOWNWARD[tile])))
+          continue;
+
+        followEdge(name, vert, pos);
+      }
     }
 
-    const end = this.vertices.find(v => posEq(v.pos, pos));
-    vertex.edges.push({ path, end });
-  }
-
-  followEdges(vertex: Vertex) {
-    for (const pos of this.grid.adjacent(vertex.pos)) {
-      const tile = this.grid.at(pos);
-      if (tile === '.' || posEq(vertex.pos, posAdd(pos, DOWNWARD[tile])))
-        continue;
-
-      this.followEdge(vertex, pos);
-    }
-  }
-
-  longestPath(): number {
-    const paths: Edge[][] = [];
-
-    this.search(this.start.edges[0], this.start.edges, paths);
-
-    return Math.max(...paths.map(path => path.reduce((acc, edge) => acc + edge.path.length, 0)));
-  }
-
-  search(edge: Edge, path: Edge[], paths: Edge[][]) {
-    if (edge.end === this.end) {
-      paths.push(path);
-      return;
-    }
-
-    for (const next of edge.end.edges) {
-      this.search(next, [...path, next], paths);
-    }
+    return graph;
   }
 }
 
 const grid = new Grid(readInputLines(23));
-const graph = new Graph(grid);
+const graph = grid.toGraph();
 
-console.log('Part 1:')
-console.log(graph.longestPath());
+console.log('Part 1:');
+console.log(longestPath(graph, 'start', 'end').weight);
+
+console.log('Part 2:');
+console.log(longestPath(bidirectional(graph), 'start', 'end').weight);

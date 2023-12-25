@@ -1,3 +1,24 @@
+export function sum<T>(ary: T[], mapFn?: (o: T) => number): number {
+  return ary.map(mapFn).reduce((acc, n) => acc + n, 0);
+}
+
+export function max<T>(ary: T[], mapFn?: (o: T) => number): T | undefined {
+  if (ary.length === 0) return;
+
+  let out: T = ary[0];
+  let max = mapFn(out);
+  for (let i = 1; i < ary.length; ++i) {
+    const o = ary[i];
+    const n = mapFn(o);
+    if (n > max) {
+      max = n;
+      out = o;
+    }
+  }
+
+  return out;
+}
+
 export function eachPair<T>(ary: T[], callback: (a: T, b: T) => any) {
   for (let i = 0; i < ary.length - 1; ++i) {
     for (let j = i + 1; j < ary.length; ++j) {
