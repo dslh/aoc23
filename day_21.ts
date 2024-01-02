@@ -4,6 +4,8 @@ import Queue from './lib/queue';
 import { Grid, createGrid } from './lib/grid';
 
 const input: string[] = readInputLines(21);
+const width = input[0].length;
+const height = input.length;
 
 const isRock = ({ x, y }: Position): boolean => input[y][x] === '#';
 
@@ -50,6 +52,7 @@ console.log(countEvenSteps(64));
 
 console.log('Part 2:');
 console.log(input[0].length, input.length);
+console.log(start);
 // 26501365
 // 5 11 481843
 function sumUpToN(n: number): number {
@@ -94,4 +97,19 @@ function manhattanArea(radius: number) {
  *    ooo
  *     o
  * = 41 (+16)
+ *
+ * o = 1
+ *
+ *  x
+ * xox
+ *  x
+ * o = 1
+ * x = 4
+ *
+ * odds = 4 * n * (n + 1) + 1
+ * even = 4 * n ** 2
+ * steps = 26501365
+ * n = (steps - 65) / 131 / 2 = 101150
+ * o = 40925290000
+ * e = 40925694601
  */
