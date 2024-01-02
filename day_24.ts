@@ -1,5 +1,6 @@
 import { readInputLines } from './input/read';
 import { eachPair } from './lib/iter';
+import { reducedRowEchelonForm } from './lib/gauss';
 
 const input = readInputLines(24);
 
@@ -69,3 +70,27 @@ function countIntersections(stones: Hailstone[], min: number, max: number): numb
 
 console.log('Part 1:');
 console.log(countIntersections(stones, 200000000000000, 400000000000000));
+
+function crossProductMatrix(a: Hailstone, b: Hailstone): number[][] {
+  const { pos: { x: pax, y: pay, z: paz }, vel: { x: vax, y: vay, z: vaz } } = a;
+  const { pos: { x: pbx, y: pby, z: pbz }, vel: { x: vbx, y: vby, z: vbz } } = b;
+
+  return [
+    [        0, vbz - vaz, vay - vby,         0, paz - pbz, pby - pay,
+      pay * vaz + pbz * vby - paz * vay - pby * vbz],
+
+    [vaz - vbz,         0, vbx - vax, pbz - paz,         0, pax - pbx,
+      paz * vax + pbx * vbz - pax * vaz - pbz * vbx],
+
+    [vby - vay, vax - vbx,         0, pay - pby, pbx - pax,         0,
+      pax * vay + pby * vbx - pay * vax - pbx * vby],
+  ];
+}
+
+console.log('Part 2:');
+const matrix = crossProductMatrix(stones[0], stones[1])
+               .concat(crossProductMatrix(stones[0], stones[2]));
+reducedRowEchelonForm(matrix);
+
+// Correct except for floating point errors :'(
+console.log(matrix[0][6] + matrix[1][6] + matrix[2][6]);
